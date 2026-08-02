@@ -594,10 +594,29 @@ a{color:inherit;text-decoration:none}
 .gchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .gchips button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 14px;color:var(--dim);font:inherit;font-size:12px;cursor:pointer;transition:border-color .15s,color .15s}
 .gchips button:hover{border-color:var(--blue);color:#fff}
+/* ===== password lock screen ===== */
+#lockScreen{position:fixed;inset:0;z-index:9999;background:#04111D;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+#lockScreen .lock-logo{font-size:28px;font-weight:900;color:#fff;letter-spacing:-.02em}
+#lockScreen .lock-logo span{color:#2081E2}
+#lockScreen .lock-sub{font-size:13px;color:#8A939E;margin-top:-10px}
+#lockScreen input{width:280px;padding:14px 20px;border-radius:12px;border:1px solid #1B3A5C;background:#0E1C2F;color:#fff;font-size:15px;text-align:center;outline:none;letter-spacing:.2em}
+#lockScreen input:focus{border-color:#2081E2;box-shadow:0 0 0 3px rgba(32,129,226,.2)}
+#lockScreen button{width:280px;padding:13px;border-radius:12px;border:none;background:#2081E2;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s}
+#lockScreen button:hover{background:#1868B7}
+#lockScreen .lock-err{color:#FF6B6B;font-size:12px;height:16px}
 </style>
 </head>
 <body>
-<div class="app">
+
+<div id="lockScreen">
+  <div class="lock-logo">Peer <span>AI Space</span></div>
+  <div class="lock-sub">Access requires a password</div>
+  <input id="lockPw" type="password" placeholder="Password" autocomplete="off">
+  <button onclick="tryUnlock()">Enter</button>
+  <div class="lock-err" id="lockErr"></div>
+</div>
+
+<div class="app" style="display:none" id="appWrap">
 
 <!-- ============ TOP NAVIGATION (OpenSea style) ============ -->
 <header class="topnav">
@@ -1613,6 +1632,24 @@ try{inboxInit();}catch(e){console.error('inbox',e);}
 try{drawGoods();setInterval(goodsTick,4000);}catch(e){console.error('goods',e);}
 try{dmDraw();}catch(e){console.error('dmarket',e);}
 try{igInit();}catch(e){console.error('infographic',e);}
+
+/* ===== password lock ===== */
+async function hashPw(pw){const enc=new TextEncoder().encode(pw);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+const HASH='6dfb97632210ac38a071667cf8be7df83a16178e12f1248e45b2a3d24b3b2bd1';
+window.tryUnlock=async function(){
+  const v=document.getElementById('lockPw').value;
+  const h=await hashPw(v);
+  if(h===HASH){
+    document.getElementById('lockScreen').style.display='none';
+    document.getElementById('appWrap').style.display='';
+    sessionStorage.setItem('unlocked','1');
+  }else{
+    document.getElementById('lockErr').textContent='비밀번호가 틀렸습니다';
+    document.getElementById('lockPw').value='';
+  }
+};
+document.getElementById('lockPw').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();});
+if(sessionStorage.getItem('unlocked')==='1'){document.getElementById('lockScreen').style.display='none';document.getElementById('appWrap').style.display='';}
 </script>
 </body>
 </html>
